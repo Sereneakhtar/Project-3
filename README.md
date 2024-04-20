@@ -1,3 +1,5 @@
+Team Members: Serene Akhtar
+
 # Project-3
 This project implements a theorem prover using Wang's Algorithm in Prolog. The goal is to prove the validity of logical sequents by applying transformation rules to simplify the sequent until it can be proven or deemed unprovable. 
 
