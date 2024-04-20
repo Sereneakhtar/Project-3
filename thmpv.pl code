@@ -1,1 +1,111 @@
+% Setting the binding priority for the logic connectives; the lower the tighter.
+:- op(700, xfy, =>).
+:- op(650, xfy, ->).
+:- op(600, xfy, v).
+:- op(500, xfy, ^).
+:- op(450, fy, ~).
+
+% Type 'run([<Premises as a list>], [<Conclusion as a formula>]). E.g., run([p ^ q], [p])' to start.
+run(Premises, Conclusion) :-
+    write(Premises => Conclusion),
+    deduce(Premises => Conclusion).
+
+deduce(X) :-
+    prove(X), !,
+    write('\n\nWe can derive the conclusion from the premises.\n').
+deduce(X) :-
+    write('\n=\tCannot be proved.'),
+    write('\n\nWe cannot derive the conclusion from the premises.\n\nAn interpretation of the signature where this does not hold:'),
+    reduce(X).
+
+% Predicate to delete an element X from a list L.
+del(X, [X | Tail], Tail).
+del(X, [H | Tl1], [H | Tl2]) :-
+    del(X, Tl1, Tl2).
+
+% Remove duplicate formulas in a list
+rmvDup([], []).
+rmvDup([H | Tail], [H | Tail1]) :-
+    \+ member(H, Tail),
+    rmvDup(Tail, Tail1).
+rmvDup([H | Tail], Tail1) :-
+    member(H, Tail),
+    rmvDup(Tail, Tail1).
+
+% Rule for proving negation
+prove(L => R) :-
+    member(~X, L),
+    del(~X, L, NewL),
+    nl, write('=\t'), write(NewL => [X | R]),
+    write('\t (by negation/left)'),
+    prove(NewL => [X | R]).
+prove(L => R) :-
+    member(~X, R),
+    del(~X, R, NewR),
+    nl, write('=\t'), write([X | L] => NewR),
+    write('\t (by negation/right)'),
+    prove([X | L] => NewR).
+
+% Rule for proving left conjunction
+prove(L => R) :-
+    member(A ^ B, L),
+    del(A ^ B, L, NewL),
+    nl, write('=\t'), write([A, B | NewL] => R),
+    write('\t (by and/left)'),
+    prove([A, B | NewL] => R).
+
+% Rule for proving right disjunction
+prove(L => R) :-
+    member(A v B, R),
+    del(A v B, R, NewR),
+    nl, write('=\t'), write(L => [A | NewR]),
+    write('\t (by or/right)'),
+    prove(L => [A | NewR]),
+    nl, write('=\t'), write(L => [B | NewR]),
+    write('\t (by or/right)'),
+    prove(L => [B | NewR]).
+
+% Rule for proving right implication
+prove(L => R) :-
+    member(A -> B, R),
+    del(A -> B, R, NewR),
+    nl, write('=\t'), write([A | L] => [B | NewR]),
+    write('\t (by implication/right)'),
+    prove([A | L] => [B | NewR]).
+
+% Rule for checking shared atom or formula
+prove(L => R) :-
+    member(X, L),
+    member(X, R),
+    nl, write('=\tDone (sharing a/f)').
+
+% Reduces expression to display the false parts
+reduce(L => R) :-
+    member(~X, L),
+    del(~X, L, NewL),
+    reduce(NewL => [X | R]). % Negation left
+reduce(L => R) :-
+    member(~X, R),
+    del(~X, R, NewR),
+    reduce([X | L] => NewR). % Negation right
+reduce(L => R) :-
+    member(A ^ B, L),
+    del(A ^ B, L, NewL),
+    reduce([A, B | NewL] => R). % And left
+reduce(L => R) :-
+    member(A v B, R),
+    del(A v B, R, NewR),
+    reduce(L => [A, B | NewR]). % Or right
+reduce(L => R) :-
+    member(A -> B, R),
+    del(A -> B, R, NewR),
+    reduce([A | L] => [B | NewR]). % Implication right
+reduce(L => R) :-
+    member(A ^ B, R),
+    del(A ^ B, R, NewR),
+    reduce(L => [A | NewR]),
+    reduce(L => [B | NewR]). % And right
+
+% Add other rules based on Wang's algorithm as needed
+
 
